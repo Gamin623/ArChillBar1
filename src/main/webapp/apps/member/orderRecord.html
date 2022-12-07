@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <script src="https://code.jquery.com/jquery-3.6.1.js"
+        integrity="sha256-3zlB5s2uwoUzrXK3BT7AX3FyvojsraNFxCc2vC/7pNI=" crossorigin="anonymous"></script>
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/simplePagination.js/1.6/jquery.simplePagination.min.js"></script>
+
+    <style>
+        /* 頁面按鈕 */
+
+        .simple-pagination ul {
+            list-style: none;
+            text-align: center;
+            margin-bottom: 50px;
+            /* 固定在下方 */
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translate(-50%);
+            width: 100%;
+        }
+
+        .simple-pagination li {
+            display: inline-block;
+            margin-right: 10px;
+        }
+
+        .simple-pagination li a {
+            font-size: 1.5rem;
+            color: black;
+            padding: 0.5rem;
+            text-decoration: none;
+            border: 1px solid rgb(255, 255, 255);
+            background-color: rgb(255, 255, 255, 0.2);
+            box-shadow: 1px 1px 1px gray;
+        }
+
+        .simple-pagination .current {
+            color: rgb(234, 255, 2);
+            border: 1px solid rgba(255, 255, 255);
+            background-color: rgb(255, 255, 255, 0.2);
+            font-size: 1.5rem;
+            padding: 0.5rem;
+            box-shadow: 1px 1px 1px gray;
+            text-decoration: none;
+        }
+
+        @media (max-width:600px) {
+            .simple-pagination li a {
+                font-size: 18px;
+                padding: 3px 3px 3px 3px;
+            }
+
+            .simple-pagination .current {
+                font-size: 20px;
+                padding: 3px 3px 3px 3px;
+            }
+        }
+    </style>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>訂單紀錄</title>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1 id="memberName">訂單紀錄：</h1>
+        <div class="container" id="order-box" style="padding-top:2rem ;">
+
+
+        </div>
+
+
+    </div>
+    <div id="pagination-container">
+
+    </div>
+
+
+
+
+    <script src="/apps/menu/js/navAndBg.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/2.0.2/anime.min.js"></script>
+
+    <script>
+
+        $.ajax({
+            url: '/order/getOrders',
+            contentType: 'application/json; chartset=UTF-8',  // 送過去的格式
+            method: 'get',
+            dataType: 'json', // 回傳的資料型別
+            success: function (result) {
+                console.log(result);
+                appendOrder(result);
+                addCommentBtn($(".goAddCom"));
+                page();
+            },
+            error: function (err) {
+
+            }
+        })
+
+
+        function appendOrder(json) {
+            for (let i = 0; i < json.length; i++) {
+
+                $("#order-box").append(`
+                <div class="card my-3 orderItem">
+                    <h5 class="card-header">訂位日期${json[i].bookDate}</h5>
+                    <div class="card-body" id="b${json[i].b_id}">
+                        <h5 class="card-title">訂單</h5>
+                        
+                    </div>
+                 </div>`);
+
+                for (key in json[i].order) {
+                    $(`#b${json[i].b_id}`).append(
+                        `<div class="card w-80 bg-dark my-1 " >
+                            <button class="p-0" data-bs-toggle="collapse" data-bs-target="#o${json[i].order[key].o_id}"> <h5 class="card-header bg-light text-start" style="">下單時間${json[i].order[key].updateDate}</h5></button>
+                            <div class="card-body text-white collapse" id="o${json[i].order[key].o_id}">
+                                
+                                
+                            </div>
+                            <div id="o${json[i].order[key].o_id}_total"></div>
+                        </div>
+                        `
+                    );
+
+                    for (o in json[i].order[key].orderdetails) {
+                        if (json[i].order[key].orderdetails[o].p_id != null) {
+
+                            $(`#o${json[i].order[key].o_id}`).append(
+                                `<div class="container detail">
+                                    <div class="row">
+                                        <div class="col-2" style="object-fit: cover;">
+                                            <img src="${json[i].order[key].orderdetails[o].product.image}" alt="" style="width: 50px; height:50px; object-fit: cover;">    
+                                        </div>
+                                        <div class="col-3">
+                                            ${json[i].order[key].orderdetails[o].product.p_name}
+                                        </div>
+                                        <div class="col-6">
+                                            單價： ${json[i].order[key].orderdetails[o].unit}
+                                            數量：${json[i].order[key].orderdetails[o].quantity}
+                                            小計：${(json[i].order[key].orderdetails[o].unit) * (json[i].order[key].orderdetails[o].quantity)}
+                                            <button pId="${json[i].order[key].orderdetails[o].product.p_id}" class="goAddCom">我要評分</button>
+                                        </div>
+                                        
+                                    </div>
+                                </div>
+                                <hr>
+                                `
+                            )
+                        } else {
+                            $(`#o${json[i].order[key].o_id}`).append(
+                                `<div class="container detail">
+                                    <div class="row">
+                                        <div class="col-2" style="object-fit: cover;">
+                                            <img src="" alt="已下架" style="width: 50px; height:50px; object-fit: cover;">    
+                                        </div>
+                                        <div class="col-3">
+                                            已無此商品
+                                        </div>
+                                        <div class="col-6">
+                                            單價： ${json[i].order[key].orderdetails[o].unit}
+                                            數量：${json[i].order[key].orderdetails[o].quantity}
+                                            小計：${(json[i].order[key].orderdetails[o].unit) * (json[i].order[key].orderdetails[o].quantity)}
+                                        </div>
+                                        
+                                    </div>
+                                </div>
+                                <hr>
+                                `)
+                        }
+                    }
+                }
+
+
+            }
+
+
+
+        }
+
+
+
+
+        // 評論
+        function addCommentBtn(obj) {
+
+            $("body").append(`    <div class="modal fade" id="comment" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog w-100">
+                <div class="modal-content" >
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel">評論區</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <form>
+                            <div class="mb-3">
+                                <label for="score" class="col-form-label">評分:</label>
+                                <select name="score" id="score">
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>                                
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                </select>
+                                    
+
+                            </div>
+                            <div class="mb-3">
+                                <label for="message-text" class="col-form-label">心得:</label>
+                                <textarea class="form-control" id="message-text"></textarea>
+                            </div>
+                        </form>
+                    </div>
+
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
+                        <button type="button" class="btn btn-primary" id="comSubmit">送出</button>
+                    </div>
+                </div>
+                </div>
+            </div>
+            `);
+            obj.attr({ "data-bs-toggle": "modal", "data-bs-target": "#comment" });
+
+            // 按下評論按鈕
+            $(".goAddCom").on("click", function () {
+                $("#comSubmit").attr("pId", $(this).attr("pId"));
+
+                // console.log($(this).attr("pId"));
+            })
+            $("#comSubmit").on("click", function () {
+                submitComm($(this).attr("pId"), $("#score").val(), $("#message-text").val());
+
+            })
+        }
+
+        // 送出請求
+        function submitComm(id, score, text) {
+
+            let comm = {
+                "p_id": id,
+                "score": score,
+                "comment": text
+            }
+            let commJson = JSON.stringify(comm);
+            // console.log(comm);
+
+            $.ajax({
+                url: '/comment/add',
+                contentType: 'application/json; chartset=UTF-8',  // 送過去的格式
+                method: 'post',
+                dataType: 'json', // 回傳的資料型別
+                data: commJson,
+                success: function (result) {
+                    console.log(result);
+                    window.location.reload();
+                },
+                error: function (err) {
+                }
+            })
+
+
+        }
+
+
+    </script>
+    <!-- 分頁 -->
+    <script>
+        function page() {
+
+            // 每個頁面要顯示幾個項目
+            var perPage = 2;
+            // 總共有多少個項目
+            var numItems = $(".orderItem").length;
+            console.log("numItems" + numItems)
+            $(".orderItem").slice(perPage).hide();
+
+            $('#pagination-container').pagination({
+
+                items: numItems,
+                itemsOnPage: perPage,
+                prevText: "&laquo;",
+                nextText: "&raquo;",
+                onPageClick: function (pageNumber) {
+                    // 計算出 起始 以及結束
+                    var from = perPage * (pageNumber - 1);
+                    var to = from + perPage;
+                    $(".orderItem").hide().slice(from, to).show();
+
+                }
+
+
+            })
+        }
+
+    </script>
+</body>
+
+</html>
