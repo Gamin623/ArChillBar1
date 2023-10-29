@@ -21,6 +21,7 @@ public class OrderService {
 
     public void deleteoId(Long id) {
         oDao.deleteById(id);
+        int i = 1;
     }
 
 }
