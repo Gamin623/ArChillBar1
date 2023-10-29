@@ -32,6 +32,7 @@ public class bookingService {
     public Page<Booking> findOrderPage(Integer pageNumber) {
         Pageable pgb = PageRequest.of(pageNumber - 1, 3, Sort.Direction.DESC, "bookDate");
         Page<Booking> page = bDao.pastorder(pgb);
+        int i = 2;
         return page;
     }
    
